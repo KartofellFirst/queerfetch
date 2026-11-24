@@ -1,6 +1,6 @@
 # queerfetch
 
-I dont know what it is yet
+C code is in /src 
 
 ASCII.txt
 and ASCIS.txt
