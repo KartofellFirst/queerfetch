@@ -5,6 +5,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/statvfs.h>
+#include <ctype.h>
+
+#define CONFIG_PATH "~/.config/queerfetch/config.queer"
+#define MAX_REPEAT 1000
 
 #define global char
 #define globall long
@@ -115,7 +119,19 @@ function get_ram(void)
         printf("fuck windows 🪟");
         printf("\n")
     #elif defined(__linux__)
-        // Linux-specific code to get RAM usage
+        FILE *fp = fopen("/proc/meminfo", "r");
+        if (fp == NULL) return;
+
+        char line[256];
+        long total = 0, available = 0;
+        while (fgets(line, sizeof(line), fp) != NULL) {
+            sscanf(line, "MemTotal: %ld", &total);
+            sscanf(line, "MemAvailable: %ld", &available);
+        }
+        fclose(fp);
+
+        TOTAL_RAM_MB = total / 1024.0f;
+        USED_RAM_MB = (total - available) / 1024.0f;
     #elif defined(__APPLE__)    
         char buffer[256];
         char buffer2[256];
@@ -149,6 +165,248 @@ function get_disk(void)
     STORAGE = (unsigned long long)disk.f_blocks * disk.f_frsize;
 }
 
+
+
+const char *expand_home(const char *path)
+{
+    static char full[4096];
+    const char *home = getenv("HOME");
+    if (path[0] != '~' || path[1] != '/' || home == NULL) return path;
+    snprintf(full, sizeof(full), "%s%s", home, path + 1);
+    return full;
+}
+
+const char *string_var(const char *name)
+{
+    if (strcmp(name, "OSNAME") == 0) return OSNAME;
+    if (strcmp(name, "KERNEL_VERSION") == 0) return KVER;
+    if (strcmp(name, "SHELL") == 0) return SHELLNAME;
+    if (strcmp(name, "USERNAME") == 0) return UNAME;
+    if (strcmp(name, "TIMEZONE") == 0) return TIMEZONE;
+    if (strcmp(name, "ATTACHMENT_STYLE") == 0) return ATTACHMENT_STYLE;
+    if (strcmp(name, "LICENSE") == 0) return BOTTOM_LICENSE_POINTS + 39 > 50 ? "Top" : "Bottom";
+    return NULL;
+}
+
+ball number_var(const char *name, double *out)
+{
+    if      (strcmp(name, "HOURS") == 0)    *out = HOURS;
+    else if (strcmp(name, "MINUTES") == 0)  *out = MINUTES;
+    else if (strcmp(name, "SECONDS") == 0)  *out = SECONDS;
+    else if (strcmp(name, "UPTIME_H") == 0) *out = UPTIME_H;
+    else if (strcmp(name, "UPTIME_M") == 0) *out = UPTIME_M;
+    else if (strcmp(name, "RAM") == 0)      *out = TOTAL_RAM_MB;
+    else if (strcmp(name, "RAM_USED") == 0) *out = USED_RAM_MB;
+    else if (strcmp(name, "STORAGE") == 0)  *out = STORAGE / (1024 * 1024);
+    else if (strcmp(name, "GAYNESS") == 0)  *out = GAYNESS + 39;
+    else return false;
+    return true;
+}
+
+ball parse_expr(const char **p, double *out);
+
+function skip_spaces(const char **p) { while (isspace((unsigned char)**p)) (*p)++; }
+
+ball parse_factor(const char **p, double *out)
+{
+    skip_spaces(p);
+
+    if (**p == '-') {
+        (*p)++;
+        if (!parse_factor(p, out)) return false;
+        *out = -*out;
+        return true;
+    }
+
+    if (**p == '(') {
+        (*p)++;
+        if (!parse_expr(p, out)) return false;
+        skip_spaces(p);
+        if (**p != ')') return false;
+        (*p)++;
+        return true;
+    }
+
+    if (isdigit((unsigned char)**p)) {
+        char *end;
+        *out = strtod(*p, &end);
+        *p = end;
+        return true;
+    }
+
+    char name[64];
+    size_t len = 0;
+    while ((isalnum((unsigned char)**p) || **p == '_') && len < sizeof(name) - 1)
+        name[len++] = *(*p)++;
+    name[len] = '\0';
+
+    return len > 0 && number_var(name, out);
+}
+
+ball parse_term(const char **p, double *out)
+{
+    if (!parse_factor(p, out)) return false;
+
+    for (;;) {
+        skip_spaces(p);
+        char op = **p;
+        if (op != '*' && op != '/') return true;
+        (*p)++;
+
+        double right;
+        if (!parse_factor(p, &right)) return false;
+        if (op == '/' && right == 0) return false;
+        *out = op == '*' ? *out * right : *out / right;
+    }
+}
+
+ball parse_expr(const char **p, double *out)
+{
+    if (!parse_term(p, out)) return false;
+
+    for (;;) {
+        skip_spaces(p);
+        char op = **p;
+        if (op != '+' && op != '-') return true;
+        (*p)++;
+
+        double right;
+        if (!parse_term(p, &right)) return false;
+        *out = op == '+' ? *out + right : *out - right;
+    }
+}
+
+ball evaluate(const char *text, double *out)
+{
+    if (!parse_expr(&text, out)) return false;
+    skip_spaces(&text);
+    return *text == '\0';
+}
+
+global *trim(global *s)
+{
+    while (isspace((unsigned char)*s)) s++;
+    size_t len = strlen(s);
+    while (len > 0 && isspace((unsigned char)s[len - 1])) s[--len] = '\0';
+    return s;
+}
+
+function print_number(const char *expr, double value)
+{
+    if (strcmp(expr, "HOURS") == 0 || strcmp(expr, "MINUTES") == 0 || strcmp(expr, "SECONDS") == 0) {
+        printf("%02.0f", value); return; }
+
+    if (value > -1e15 && value < 1e15 && value == (double)(globalll)value) 
+        printf("%lld", (globalll)value);
+    else 
+        printf("%.2f", value);
+}
+
+ball print_repeat(global *expr)
+{
+    for (size_t i = strlen(expr); i-- > 0; ) {
+        if (expr[i] != '*') continue;
+
+        double count;
+        expr[i] = '\0';
+        ball ok = evaluate(expr, &count);
+        expr[i] = '*';
+        if (!ok) continue;
+
+        global *text = trim(expr + i + 1);
+        size_t len = strlen(text);
+        if (len == 0) return false;
+
+        if (len >= 2 && text[0] == '"' && text[len - 1] == '"') { text++; len -= 2; }
+
+        if (count > MAX_REPEAT) count = MAX_REPEAT;
+        int times = count > 0 ? (int)(count + 0.5) : 0;
+        if (times - count == 0.5 && times % 2 != 0) times--;
+
+        for (int n = 0; n < times; n++) fwrite(text, 1, len, stdout);
+        return true;
+    }
+    return false;
+}
+
+ball print_placeholder(global *raw)
+{
+    global *expr = trim(raw);
+    const char *str = string_var(expr);
+    if (str != NULL) { 
+        fputs(str, stdout); return true; }
+
+    double value;
+    if (evaluate(expr, &value)) { 
+        print_number(expr, value); return true; }
+    return print_repeat(expr);
+}
+
+
+global *read_file(const char *path)
+{
+    FILE *fp = fopen(path, "rb");
+    if (fp == NULL) return NULL;
+
+    global *data = NULL;
+    if (fseek(fp, 0, SEEK_END) == 0) {
+        long size = ftell(fp);
+        if (size >= 0 && fseek(fp, 0, SEEK_SET) == 0 && (data = malloc(size + 1)) != NULL) {
+            size_t got = fread(data, 1, size, fp);
+            data[got] = '\0';
+        }
+    }
+
+    fclose(fp);
+    return data;
+}
+
+ball render_config(const char *path)
+{
+    global *text = read_file(path);
+    if (text == NULL) {
+        perror(path);
+        return false;
+    }
+
+    global *cur = text;
+    global *open;
+
+    while ((open = strstr(cur, "%{")) != NULL) {
+        global *close = strstr(open + 2, "}%");
+        global *newline = strchr(open + 2, '\n');
+        if (close == NULL || (newline != NULL && newline < close)) {
+            fwrite(cur, 1, open + 2 - cur, stdout);
+            cur = open + 2;
+            continue;
+        }
+
+        fwrite(cur, 1, open - cur, stdout); 
+
+        size_t len = close - (open + 2);
+        global *expr = malloc(len + 1);
+        if (expr == NULL) break;
+        memcpy(expr, open + 2, len);
+        expr[len] = '\0';
+
+        // unknown name or broken math: show the placeholder untouched
+        if (!print_placeholder(expr)) fwrite(open, 1, close + 2 - open, stdout);
+
+        free(expr);
+        cur = close + 2;
+    }
+
+    fputs(cur, stdout);
+    free(text);
+    return true;
+}
+
+
+
+
+
+
+
 main {
 
     get_kernel();
@@ -159,16 +417,6 @@ main {
     get_time();
     get_disk();
 
-    printf("Hello, World!\n");
-    printf("Kernel Version: %s\n", KVER);
-    printf("OS Name: %s\n", OSNAME);    
-    printf("Shell Name: %s\n", SHELLNAME);
-    printf("Username: %s\n", UNAME);
-    printf("Uptime: %ld hours, %ld minutes\n", UPTIME_H, UPTIME_M);
-    printf("Total RAM: %.2f MB\n", TOTAL_RAM_MB);
-    printf("Used RAM: %.2f MB\n", USED_RAM_MB);
-    printf("Timezone: %s\n", TIMEZONE);
-    printf("Current Time: %02d:%02d:%02d\n", HOURS, MINUTES, SECONDS);
-    printf("Storage: %llu MB\n", STORAGE / (1024 * 1024));
-    return 0;
+    return render_config(expand_home(CONFIG_PATH)) ? 0 : 1;
 }
+
