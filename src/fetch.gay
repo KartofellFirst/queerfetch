@@ -8,19 +8,22 @@
 
 #define global char
 #define globall long
+#define golf float
 #define gl short
 #define ball bool
+#define function void
+#define main int main()
 
 global *KVER = "unavailable";
 global *UNAME = "unavailable";
 global *OSNAME = "unavailable";
 global *SHELLNAME = "unavailable";
 globall UPTIME_H, UPTIME_M;
+golf TOTAL_RAM_MB, USED_RAM_MB;
 
 
 // -39 to 61, gives total of 100 points of gayness :3
 // tho i dont know if it saves any RAM, but it looks cute and makes me happy so im keeping it
-// (wow VScode autocomplete just sugggested "it looks cute and makes me happy" and i lwk agree to that)
 gl GAYNESS = -39; 
 
 
@@ -48,9 +51,9 @@ ball up = false;
 // shell + 
 // uptime + 
 // kernel + 
-// username - 
+// username +
 // max disk space - 
-// used/max ram -
+// used/max ram +
 // cpu usage -
 // gpu usage -
 // battery availability -
@@ -59,15 +62,15 @@ ball up = false;
 // sound volume - 
 
 
-void get_shell(void)
+function get_shell(void)
 {
     char *shell = getenv("SHELL"); if (shell != NULL) {
         char *slash = strrchr(shell, '/');
-        SHELLNAME = (slash != NULL) ? slash + 1 : shell;
+        SHELLNAME = slash ? slash + 1 : shell;
     }
 }
 
-void get_uptime(void)
+function get_uptime(void)
 {
     struct timespec time = {0};
 
@@ -85,7 +88,7 @@ void get_uptime(void)
     UPTIME_M = (time.tv_sec % 3600) / 60;
 }
 
-void get_kernel(void)
+function get_kernel(void)
 {
     static struct utsname data;
     if (uname(&data) == 0) {
@@ -94,19 +97,44 @@ void get_kernel(void)
     }
 }
 
-void get_user(void)
+function get_user(void)
 {
-    char *user = getenv("USER");
-    if (user == NULL) UNAME = getlogin() || "unavailable";
+    // from D76
+    UNAME = getenv("USER");
+    UNAME = UNAME ? UNAME : getlogin();
+    UNAME = UNAME ? UNAME : "unavailable";
 }
 
+function get_ram(void)
+{
+    #if defined(_WIN32)
+        printf("fuck windows 🪟");
+        printf("\n")
+    #elif defined(__linux__)
+        // Linux-specific code to get RAM usage
+    #elif defined(__APPLE__)    
+        char buffer[256];
+        char buffer2[256];
+        FILE *fp = popen("sysctl hw.memsize", "r");
+        FILE *fp2 = popen("vm_stat | awk '/Pages active|Pages wired down|Pages occupied by compressor/ {sum += $NF} END {print sum * 16384 / 2^30 ""}'", "r");
 
-int main() {
+        while (fgets(buffer, sizeof(buffer), fp2) != NULL) {USED_RAM_MB = strtol(buffer, NULL, 10) * 1024;}
+        while (fgets(buffer2, sizeof(buffer2), fp) != NULL) {TOTAL_RAM_MB = strtol(buffer2 + 12, NULL, 10) / (1024 * 1024);}
+
+        pclose(fp);
+        pclose(fp2);
+    #else
+        // Other platforms
+    #endif
+}
+
+main {
 
     get_kernel();
     get_uptime();
     get_user();
     get_shell();
+    get_ram();
 
     printf("Hello, World!\n");
     printf("Kernel Version: %s\n", KVER);
@@ -114,5 +142,7 @@ int main() {
     printf("Shell Name: %s\n", SHELLNAME);
     printf("Username: %s\n", UNAME);
     printf("Uptime: %ld hours, %ld minutes\n", UPTIME_H, UPTIME_M);
+    printf("Total RAM: %.2f MB\n", TOTAL_RAM_MB);
+    printf("Used RAM: %.2f MB\n", USED_RAM_MB);
     return 0;
 }
