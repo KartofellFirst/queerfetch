@@ -10,7 +10,7 @@ Despite usual info, `queerfetch` provides you with such outputs as: <br>
 
 
 source code is in /src/fetch.gay -> [visit](/src/fetch.gay) <br>
-C version is C23
+Language standard: C23
 
 <h3><p align=center>setup</p></h3>
 
@@ -50,6 +50,8 @@ ASCII.txt
 and ASCIS.txt
 are definitely not the final choice yet
 
-Project licensed with [MIT License](LICENSE) <br>
+Project is licensed under the [MIT License](LICENSE) <br>
+
 Authors will be listed in [NOTICE](NOTICE) <br>
+
 2026
