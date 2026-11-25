@@ -4,7 +4,6 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdbool.h>
 #include <sys/statvfs.h>
 
 #define global char
@@ -27,7 +26,7 @@ golf TOTAL_RAM_MB, USED_RAM_MB;
 gl HOURS, MINUTES, SECONDS;
 
 
-// what do we have left to implement? 
+// what do we have left to discover about user system? 
 // shell + 
 // uptime + 
 // kernel + 
