@@ -5,9 +5,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/statvfs.h>
 
 #define global char
 #define globall long
+#define globalll long long
 #define golf float
 #define gl short
 #define ball bool
@@ -18,8 +20,26 @@ global *KVER = "unavailable";
 global *UNAME = "unavailable";
 global *OSNAME = "unavailable";
 global *SHELLNAME = "unavailable";
+global TIMEZONE[6] = "unavai";
 globall UPTIME_H, UPTIME_M;
+globalll STORAGE;
 golf TOTAL_RAM_MB, USED_RAM_MB;
+gl HOURS, MINUTES, SECONDS;
+
+
+// what do we have left to implement? 
+// shell + 
+// uptime + 
+// kernel + 
+// username +
+// max disk space +
+// used/max ram +
+// cpu usage -
+// gpu usage -
+// battery availability -
+// local time +
+// current hour +
+// sound volume - 
 
 
 // -39 to 61, gives total of 100 points of gayness :3
@@ -45,21 +65,6 @@ global *ATTACHMENT_STYLE = "Disorganized";
 // 50/100 will be the split. Higher than 50 will be a top license
 gl BOTTOM_LICENSE_POINTS = -39;
 ball up = false;
-
-
-// what do we have left to discover about user system? 
-// shell + 
-// uptime + 
-// kernel + 
-// username +
-// max disk space - 
-// used/max ram +
-// cpu usage -
-// gpu usage -
-// battery availability -
-// local time -
-// current hour - 
-// sound volume - 
 
 
 function get_shell(void)
@@ -124,8 +129,25 @@ function get_ram(void)
         pclose(fp);
         pclose(fp2);
     #else
-        // Other platforms
+        printf("where am I?")
     #endif
+}
+
+function get_time(void)
+{
+    time_t now = time(NULL);
+    struct tm *local_time = localtime(&now);
+    strftime(TIMEZONE, sizeof(TIMEZONE), "%z", local_time);
+    HOURS = local_time->tm_hour;
+    MINUTES = local_time->tm_min;
+    SECONDS = local_time->tm_sec;
+}
+
+function get_disk(void)
+{
+    struct statvfs disk;
+    if (statvfs("/", &disk) != 0) perror("statvfs");
+    STORAGE = (unsigned long long)disk.f_blocks * disk.f_frsize;
 }
 
 main {
@@ -135,6 +157,8 @@ main {
     get_user();
     get_shell();
     get_ram();
+    get_time();
+    get_disk();
 
     printf("Hello, World!\n");
     printf("Kernel Version: %s\n", KVER);
@@ -144,5 +168,8 @@ main {
     printf("Uptime: %ld hours, %ld minutes\n", UPTIME_H, UPTIME_M);
     printf("Total RAM: %.2f MB\n", TOTAL_RAM_MB);
     printf("Used RAM: %.2f MB\n", USED_RAM_MB);
+    printf("Timezone: %s\n", TIMEZONE);
+    printf("Current Time: %02d:%02d:%02d\n", HOURS, MINUTES, SECONDS);
+    printf("Storage: %llu MB\n", STORAGE / (1024 * 1024));
     return 0;
 }
