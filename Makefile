@@ -1,6 +1,6 @@
 SRC = src/fetch.gay
 CC ?= cc
-CFLAGS = -O2 -std=gnu99 -Wall -Wextra
+CFLAGS = -O2 -std=gnu23 -Wall -Wextra
 LDFLAGS = -lpthread
 PREFIX ?= /usr/local
 
