@@ -1,0 +1,23 @@
+
+
+                 I WAKE UP                      
+             █               ███                
+          ███ ██           ██   ██              OS name: %{OSNAME}%
+         ██     ███████████      █              Version: %{KERNEL_VERSION}%
+        █                         █             
+     ███                           ████         Shell: %{SHELL}%
+                                     ███        UTC: %{TIMEZONE}%
+     ███     █             ██                   TIME: %{HOURS}%:%{MINUTES}%:%{SECONDS}%
+        █        ███████          █             UPTIME: %{UPTIME_H}%h %{UPTIME_M}%min
+         ███       █ ██        ███              
+        ██  ██     ██       ██    █             USER: %{USERNAME}%
+         ████                  ███              GAYNESS: %{GAYNESS}%/100 
+            █                  █                ATSTL: %{ATTACHMENT_STYLE}% 
+            ██                 █                LICENSE: %{LICENSE}%
+          ███                  █             
+          ██  █████████████  ██                 RAM: %{RAM_USED/1000}%/%{RAM/1000}%GiB
+           █ █             ██                   STORAGE: %{STORAGE}%
+                                                
+              MEOWMEOWMEOWMEOW
+              MEOWMEOWMEOWMEOW      
+
