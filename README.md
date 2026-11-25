@@ -34,21 +34,67 @@ uninstall:
 make uninstall
 ```
 
+<h3><p align=center>configuration</p></h3>
+
+_config examples are located there -> [visit](/config_example/)_ <br>
+on your computer, config must be available in `~/.config/queerfetch/` <br>
+file must be called `config.queer`
+
+| Variable | Output |
+|---|---|
+| `OSNAME` | OS name |
+| `KERNEL_VERSION` | kernel release |
+| `SHELL` | shell name |
+| `USERNAME` | current user |
+| `TIMEZONE` | UTC offset, e.g. `+0300` |
+| `HOURS`, `MINUTES`, `SECONDS` | local time |
+| `UPTIME_H`, `UPTIME_M` | uptime in hours and minutes |
+| `RAM`, `RAM_USED` | total and used RAM in MiB |
+| `STORAGE` | size of the root filesystem in MiB |
+| `GAYNESS` | gayness level, 0 to 100 |
+| `ATTACHMENT_STYLE` | attachment style |
+| `ATTACHMENT_SECURITY` | attachment security, 0 to 100 |
+| `LICENSE` | `Top` or `Bottom` |
+| `BOTTOM_LICENSE_POINTS` | license points, 0 to 100 |
+
+to use them in your config, wrap variable name in `%{}%`
+
+```
+OS: %{OSNAME}% %{KERNEL_VERSION}%
+TIME: %{HOURS}%:%{MINUTES}%:%{SECONDS}%
+```
+
+#### math
+
+Numeric variables support `+`, `-`, `*`, `/` and parentheses. Fractional results are shown with two decimals.
+
+```
+RAM: %{RAM_USED/1024}% / %{RAM/1024}% GiB
+```
+
+#### repeat
+
+`%{count * text}%` prints `text` `count` times, which is handy for progress bars:
+
+```
+[%{(GAYNESS/10) * █}%%{(10 - GAYNESS/10) * ░}%]
+```
+
+With `GAYNESS` at 30 this gives `[███░░░░░░░]`.
+
+- `count` can be any math expression. It is rounded to the nearest integer (exact halves go to the even number) and capped at 1000. Zero or negative values print nothing.
+- Spaces around `text` are trimmed. Use quotes to keep them: `%{3 * "~ "}%`
+- Quote numbers too: `%{5 * 2}%` prints `10`, while `%{5 * "2"}%` prints `22222`.
+
 <h3><p align=center>usage</p></h3>
 
-configs are not implemented yet. test modules recognition with:
+after the installation, run
 
 ```bash
 queerfetch
 ```
 
-after installation. 
-
 <h3><p align=center>footer</p></h3>
-
-ASCII.txt
-and ASCIS.txt
-are definitely not the final choice yet
 
 Project is licensed under the [MIT License](LICENSE) <br>
 
