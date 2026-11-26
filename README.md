@@ -64,7 +64,7 @@ OS: %{OSNAME}% %{KERNEL_VERSION}%
 TIME: %{HOURS}%:%{MINUTES}%:%{SECONDS}%
 ```
 
-#### math
+### math
 
 Numeric variables support `+`, `-`, `*`, `/` and parentheses. Fractional results are shown with two decimals.
 
@@ -72,7 +72,7 @@ Numeric variables support `+`, `-`, `*`, `/` and parentheses. Fractional results
 RAM: %{RAM_USED/1024}% / %{RAM/1024}% GiB
 ```
 
-#### repeat
+### repeat
 
 `%{count * text}%` prints `text` `count` times, which is handy for progress bars:
 
@@ -85,6 +85,19 @@ With `GAYNESS` at 30 this gives `[███░░░░░░░]`.
 - `count` can be any math expression. It is rounded to the nearest integer (exact halves go to the even number) and capped at 1000. Zero or negative values print nothing.
 - Spaces around `text` are trimmed. Use quotes to keep them: `%{3 * "~ "}%`
 - Quote numbers too: `%{5 * 2}%` prints `10`, while `%{5 * "2"}%` prints `22222`.
+
+
+### colors and styles
+
+`RESET`, `BOLD`, `DIM`, `ITALIC`, `UNDERLINE`, <br>
+`BLACK`, `RED`, `GREEN`, `YELLOW`, `BLUE`, `MAGENTA`, <br>
+`CYAN`, `WHITE`, or any `#rrggbb` color (needs a truecolor terminal).
+
+```
+%{BOLD}%%{#ff69b4}%USER:%{RESET}% %{USERNAME}%
+```
+
+A style stays active until `%{RESET}%`; colors are also replaced by the next color.
 
 <h3><p align=center>usage</p></h3>
 
