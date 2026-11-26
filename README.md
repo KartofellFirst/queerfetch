@@ -36,7 +36,7 @@ make uninstall
 
 <h3><p align=center>configuration</p></h3>
 
-_fallback config -> [visit](/config_example/config.queer)_ <br>
+_fallback config -> [visit](/config/config.queer)_ <br>
 your custom config must be available at `~/.config/queerfetch/config.queer` <br>
 
 
