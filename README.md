@@ -36,9 +36,9 @@ make uninstall
 
 <h3><p align=center>configuration</p></h3>
 
-_config examples are located there -> [visit](/config_example/)_ <br>
-on your computer, config must be available in `~/.config/queerfetch/` <br>
-file must be called `config.queer`
+_fallback config -> [visit](/config_example/config.queer)_ <br>
+your custom config must be available at `~/.config/queerfetch/config.queer` <br>
+
 
 | Variable | Output |
 |---|---|
