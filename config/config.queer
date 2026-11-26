@@ -1,0 +1,23 @@
+
+
+                 I WAKE UP                      
+             █               ███                
+          ███ ██           ██   ██              %{MAGENTA}%OS name:%{RESET}% %{OSNAME}%
+         ██     ███████████      █              %{MAGENTA}%Version:%{RESET}% %{KERNEL_VERSION}%
+        █                         █             
+     ███                           ████         %{YELLOW}%Shell:%{RESET}% %{SHELL}%
+                                     ███        %{YELLOW}%UTC:%{RESET}% %{TIMEZONE}%
+     ███     █             ██                   %{YELLOW}%TIME:%{RESET}% %{HOURS}%:%{MINUTES}%:%{SECONDS}%
+        █        ███████          █             %{YELLOW}%UPTIME:%{RESET}% %{UPTIME_H}%h %{UPTIME_M}%min
+         ███       █ ██        ███              
+        ██  ██     ██       ██    █             %{CYAN}%USER:%{RESET}% %{USERNAME}%
+         ████                  ███              %{CYAN}%GAYNESS:%{RESET}% %{GAYNESS}%/100 
+            █                  █                %{CYAN}%ATSTL:%{RESET}% %{ATTACHMENT_STYLE}% 
+            ██                 █                %{CYAN}%LICENSE:%{RESET}% %{LICENSE}%
+          ███                  █             
+          ██  █████████████  ██                 %{RED}%RAM:%{RESET}% %{RAM_USED/1000}%/%{RAM/1000}%GiB
+           █ █             ██                   %{RED}%STORAGE:%{RESET}% %{STORAGE/1000}%GiB
+                                                
+              MEOWMEOWMEOWMEOW
+              MEOWMEOWMEOWMEOW      
+
