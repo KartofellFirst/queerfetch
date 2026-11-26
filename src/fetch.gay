@@ -167,6 +167,11 @@ function get_disk(void)
 
 
 
+static const char DEFAULT_CONFIG[] = {
+    #embed "../config/config.queer"
+    , 0
+};
+
 const char *expand_home(const char *path)
 {
     static char full[4096];
@@ -329,9 +334,34 @@ ball print_repeat(global *expr)
     return false;
 }
 
+ball print_style(const char *name)
+{
+    static const char *styles[][2] = {
+        {"RESET", "0"}, {"BOLD", "1"}, {"DIM", "2"}, {"ITALIC", "3"}, {"UNDERLINE", "4"},
+        {"BLACK", "30"}, {"RED", "31"}, {"GREEN", "32"}, {"YELLOW", "33"},
+        {"BLUE", "34"}, {"MAGENTA", "35"}, {"CYAN", "36"}, {"WHITE", "37"},
+    };
+
+    for (size_t i = 0; i < sizeof(styles) / sizeof(styles[0]); i++) {
+        if (strcmp(name, styles[i][0]) == 0) {
+            printf("\033[%sm", styles[i][1]);
+            return true;
+        }
+    }
+
+    unsigned r, g, b;
+    int n = 0;
+    if (sscanf(name, "#%2x%2x%2x%n", &r, &g, &b, &n) == 3 && n == 7 && name[n] == '\0') {
+        printf("\033[38;2;%u;%u;%um", r, g, b);
+        return true;
+    }
+    return false;
+}
+
 ball print_placeholder(global *raw)
 {
     global *expr = trim(raw);
+    if (print_style(expr)) return true;
     const char *str = string_var(expr);
     if (str != NULL) { 
         fputs(str, stdout); return true; }
@@ -364,6 +394,7 @@ global *read_file(const char *path)
 ball render_config(const char *path)
 {
     global *text = read_file(path);
+    if (text == NULL) text = strdup(DEFAULT_CONFIG);
     if (text == NULL) {
         perror(path);
         return false;
@@ -397,6 +428,7 @@ ball render_config(const char *path)
     }
 
     fputs(cur, stdout);
+    fputs("\033[0m", stdout);
     free(text);
     return true;
 }
