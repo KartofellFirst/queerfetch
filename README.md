@@ -17,7 +17,7 @@ Language standard: C23
 install:
 
 ```bash
-make megay
+sudo make megay
 ```
 
 build:
@@ -31,7 +31,7 @@ make gay
 uninstall:
 
 ```bash
-make uninstall
+sudo make uninstall
 ```
 
 <h3><p align=center>configuration</p></h3>
