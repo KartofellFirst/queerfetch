@@ -36,7 +36,7 @@ make uninstall
 
 <h3><p align=center>configuration</p></h3>
 
-_fallback config -> [visit](/config/config.queer)_ <br>
+_fallback config -> [see](/config/config.queer)_ <br>
 your custom config must be available at `~/.config/queerfetch/config.queer` <br>
 
 
@@ -57,7 +57,7 @@ your custom config must be available at `~/.config/queerfetch/config.queer` <br>
 | `LICENSE` | `Top` or `Bottom` |
 | `BOTTOM_LICENSE_POINTS` | license points, 0 to 100 |
 
-to use them in your config, wrap variable name in `%{}%`
+to use them, in your config wrap variable name in `%{}%`
 
 ```
 OS: %{OSNAME}% %{KERNEL_VERSION}%
