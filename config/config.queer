@@ -9,15 +9,16 @@
                                      ███        %{YELLOW}%UTC:%{RESET}% %{TIMEZONE}%
      ███     █             ██                   %{YELLOW}%TIME:%{RESET}% %{HOURS}%:%{MINUTES}%:%{SECONDS}%
         █        ███████          █             %{YELLOW}%UPTIME:%{RESET}% %{UPTIME_H}%h %{UPTIME_M}%min
-         ███       █ ██        ███              
-        ██  ██     ██       ██    █             %{CYAN}%USER:%{RESET}% %{USERNAME}%
-         ████                  ███              %{CYAN}%GAYNESS:%{RESET}% %{GAYNESS}%/100 
-            █                  █                %{CYAN}%ATSTL:%{RESET}% %{ATTACHMENT_STYLE}% 
-            ██                 █                %{CYAN}%LICENSE:%{RESET}% %{LICENSE}%
-          ███                  █             
-          ██  █████████████  ██                 %{RED}%RAM:%{RESET}% %{RAM_USED/1000}%/%{RAM/1000}%GiB
-           █ █             ██                   %{RED}%STORAGE:%{RESET}% %{STORAGE/1000}%GiB
-                                                
+         ███       █ ██        ███              %{YELLOW}%BATTERY:%{RESET}% %{BATTERY_PERCENTAGE}%% [%{BATTERY_STATUS}%]
+        ██  ██     ██       ██    █             
+         ████                  ███              %{CYAN}%USER:%{RESET}% %{USERNAME}%
+            █                  █                %{CYAN}%GAYNESS:%{RESET}% %{GAYNESS}%/100 
+            ██                 █                %{CYAN}%ATSTL:%{RESET}% %{ATTACHMENT_STYLE}% 
+          ███                  █                %{CYAN}%LICENSE:%{RESET}% %{LICENSE}%
+          ██  █████████████  ██                 
+           █ █             ██                   %{RED}%RAM:%{RESET}% %{RAM_USED/1024}%/%{RAM/1024}%GiB
+                                                %{RED}%STORAGE:%{RESET}% %{STORAGE/1024}%GiB
               MEOWMEOWMEOWMEOW
-              MEOWMEOWMEOWMEOW      
+              MEOWMEOWMEOWMEOW                  %{BLUE}%VOLUME: {%{VOLUME/10*/}%%{(10-(VOLUME/10))*-}%)%{RESET}%
+              MEOWMEOWMEOWMEOW
 
