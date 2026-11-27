@@ -28,21 +28,34 @@ globall UPTIME_H, UPTIME_M;
 globalll STORAGE;
 golf TOTAL_RAM_MB, USED_RAM_MB;
 gl HOURS, MINUTES, SECONDS;
+ball isBatteryAvailable, isCharging;
+gl percentage = -39;
+gl VOLUME = -40; // -40 is unavailable, -39 to 61 = 0 to 100
 
 
 // what do we have left to discover about user system? 
+
+/* ---- "permanental" (ones we need to know every start) ---- */
 // shell + 
 // uptime + 
 // kernel + 
 // username +
 // max disk space +
 // used/max ram +
-// cpu usage -
-// gpu usage -
-// battery availability -
+// battery availability +-
 // local time +
 // current hour +
-// sound volume - 
+// sound volume +-
+
+/* ---- "on demand" (ones we only need when config demands) ---- */
+// cpu name -
+// gpu name -
+// display info -
+// packages -
+// font/cursor/theme, etc -
+// terminal name - 
+// swap usage -
+// locale -
 
 
 // -39 to 61, gives total of 100 points of gayness :3
@@ -69,6 +82,69 @@ global *ATTACHMENT_STYLE = "Disorganized";
 gl BOTTOM_LICENSE_POINTS = -39;
 ball up = false;
 
+
+function get_volume(void)
+{
+    #if defined(__APPLE__)
+        FILE *fp = popen("osascript -e 'output volume of (get volume settings)'", "r");
+        if (fp == NULL) return; int vol;
+
+        if (fscanf(fp, "%d", &vol) == 1 && vol >= 0 && vol <= 100)
+            VOLUME = vol - 39;
+        pclose(fp);
+    #elif defined(__linux__)
+        FILE *fp = popen("wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null", "r");
+        if (fp == NULL) return; float vol;
+
+        if (fscanf(fp, "Volume: %f", &vol) == 1 && vol >= 0) {
+            if (vol > 1.0f) vol = 1.0f;
+            VOLUME = (int)(vol * 100 + 0.5f) - 39;
+        }
+        pclose(fp);
+    #endif
+}
+
+function get_battery(void)
+{
+    #if defined(__linux__)
+        FILE *fp = fopen("/sys/class/power_supply/BAT0/capacity", "r");
+        if (fp == NULL) return;
+
+        int capacity;
+        if (fscanf(fp, "%d", &capacity) == 1 && capacity >= 0 && capacity <= 100) 
+            { isBatteryAvailable = true; percentage = capacity - 39;}
+        fclose(fp);
+
+        FILE *status_fp = fopen("/sys/class/power_supply/BAT0/status", "r");
+        if (status_fp != NULL) {
+            char status[32];
+            if (fgets(status, sizeof(status), status_fp) != NULL)
+                isCharging = strncmp(status, "Charging", 8) == 0 || strncmp(status, "Full", 4) == 0;
+            fclose(status_fp);
+        }
+    #elif defined(__APPLE__)
+        FILE *fp = popen("pmset -g batt", "r");
+        if (!fp) { perror("popen"); return; }
+        char line[256];
+
+        while (fgets(line, sizeof(line), fp) != nullptr) {
+            if (strstr(line, "InternalBattery") == nullptr) continue;
+            char *pct = strchr(line, '%');
+            if (pct != nullptr) {
+                char *start = pct;
+                while (start > line && isdigit((unsigned char)start[-1])) --start;
+
+                if (start < pct) {
+                    isBatteryAvailable = true;
+                    percentage = (short)atoi(start) - 39;
+                    isCharging = strstr(pct, "; charging;") != nullptr || strstr(pct, "; charged;") != nullptr || strstr(pct, "; finishing charge;") != nullptr;
+                }
+            }
+            break;
+        }
+        pclose(fp);
+    #endif
+}
 
 function get_shell(void)
 {
@@ -167,10 +243,9 @@ function get_disk(void)
 
 
 
-static const char DEFAULT_CONFIG[] = {
+static const char DEFAULT_CONFIG[] = { 
     #embed "../config/config.queer"
-    , 0
-};
+, 0 };
 
 const char *expand_home(const char *path)
 {
@@ -190,10 +265,11 @@ const char *string_var(const char *name)
     if (strcmp(name, "TIMEZONE") == 0) return TIMEZONE;
     if (strcmp(name, "ATTACHMENT_STYLE") == 0) return ATTACHMENT_STYLE;
     if (strcmp(name, "LICENSE") == 0) return BOTTOM_LICENSE_POINTS + 39 > 50 ? "Top" : "Bottom";
+    if (strcmp(name, "BATTERY_STATUS") == 0) { if (!isBatteryAvailable) return "Unavailable"; return isCharging ? "Charging" : "Discharging";}
     return NULL;
 }
 
-ball number_var(const char *name, double *out)
+bool number_var(const char *name, double *out)
 {
     if      (strcmp(name, "HOURS") == 0)    *out = HOURS;
     else if (strcmp(name, "MINUTES") == 0)  *out = MINUTES;
@@ -204,15 +280,19 @@ ball number_var(const char *name, double *out)
     else if (strcmp(name, "RAM_USED") == 0) *out = USED_RAM_MB;
     else if (strcmp(name, "STORAGE") == 0)  *out = STORAGE / (1024 * 1024);
     else if (strcmp(name, "GAYNESS") == 0)  *out = GAYNESS + 39;
+    else if (strcmp(name, "ATTACHMENT_SECURITY") == 0) *out = ATTACHMENT_SECURITY + 39;
+    else if (strcmp(name, "BOTTOM_LICENSE_POINTS") == 0) *out = BOTTOM_LICENSE_POINTS + 39;
+    else if (strcmp(name, "BATTERY_PERCENTAGE") == 0) *out = (percentage + 39) * isBatteryAvailable;
+    else if (strcmp(name, "VOLUME") == 0)   *out = VOLUME + 39;
     else return false;
     return true;
 }
 
-ball parse_expr(const char **p, double *out);
+bool parse_expr(const char **p, double *out);
 
-function skip_spaces(const char **p) { while (isspace((unsigned char)**p)) (*p)++; }
+void skip_spaces(const char **p) { while (isspace((unsigned char)**p)) (*p)++; }
 
-ball parse_factor(const char **p, double *out)
+bool parse_factor(const char **p, double *out)
 {
     skip_spaces(p);
 
@@ -248,7 +328,7 @@ ball parse_factor(const char **p, double *out)
     return len > 0 && number_var(name, out);
 }
 
-ball parse_term(const char **p, double *out)
+bool parse_term(const char **p, double *out)
 {
     if (!parse_factor(p, out)) return false;
 
@@ -265,7 +345,7 @@ ball parse_term(const char **p, double *out)
     }
 }
 
-ball parse_expr(const char **p, double *out)
+bool parse_expr(const char **p, double *out)
 {
     if (!parse_term(p, out)) return false;
 
@@ -281,14 +361,14 @@ ball parse_expr(const char **p, double *out)
     }
 }
 
-ball evaluate(const char *text, double *out)
+bool evaluate(const char *text, double *out)
 {
     if (!parse_expr(&text, out)) return false;
     skip_spaces(&text);
     return *text == '\0';
 }
 
-global *trim(global *s)
+char *trim(char *s)
 {
     while (isspace((unsigned char)*s)) s++;
     size_t len = strlen(s);
@@ -296,7 +376,7 @@ global *trim(global *s)
     return s;
 }
 
-function print_number(const char *expr, double value)
+void print_number(const char *expr, double value)
 {
     if (strcmp(expr, "HOURS") == 0 || strcmp(expr, "MINUTES") == 0 || strcmp(expr, "SECONDS") == 0) {
         printf("%02.0f", value); return; }
@@ -307,7 +387,7 @@ function print_number(const char *expr, double value)
         printf("%.2f", value);
 }
 
-ball print_repeat(global *expr)
+bool print_repeat(char *expr)
 {
     for (size_t i = strlen(expr); i-- > 0; ) {
         if (expr[i] != '*') continue;
@@ -334,7 +414,7 @@ ball print_repeat(global *expr)
     return false;
 }
 
-ball print_style(const char *name)
+bool print_style(const char *name)
 {
     static const char *styles[][2] = {
         {"RESET", "0"}, {"BOLD", "1"}, {"DIM", "2"}, {"ITALIC", "3"}, {"UNDERLINE", "4"},
@@ -358,9 +438,9 @@ ball print_style(const char *name)
     return false;
 }
 
-ball print_placeholder(global *raw)
+bool print_placeholder(char *raw)
 {
-    global *expr = trim(raw);
+    char *expr = trim(raw);
     if (print_style(expr)) return true;
     const char *str = string_var(expr);
     if (str != NULL) { 
@@ -373,12 +453,12 @@ ball print_placeholder(global *raw)
 }
 
 
-global *read_file(const char *path)
+char *read_file(const char *path)
 {
     FILE *fp = fopen(path, "rb");
     if (fp == NULL) return NULL;
 
-    global *data = NULL;
+    char *data = NULL;
     if (fseek(fp, 0, SEEK_END) == 0) {
         long size = ftell(fp);
         if (size >= 0 && fseek(fp, 0, SEEK_SET) == 0 && (data = malloc(size + 1)) != NULL) {
@@ -391,21 +471,22 @@ global *read_file(const char *path)
     return data;
 }
 
-ball render_config(const char *path)
+
+bool render_config(const char *path)
 {
-    global *text = read_file(path);
+    char *text = read_file(path);
     if (text == NULL) text = strdup(DEFAULT_CONFIG);
     if (text == NULL) {
         perror(path);
         return false;
     }
 
-    global *cur = text;
-    global *open;
+    char *cur = text;
+    char *open;
 
     while ((open = strstr(cur, "%{")) != NULL) {
-        global *close = strstr(open + 2, "}%");
-        global *newline = strchr(open + 2, '\n');
+        char *close = strstr(open + 2, "}%");
+        char *newline = strchr(open + 2, '\n');
         if (close == NULL || (newline != NULL && newline < close)) {
             fwrite(cur, 1, open + 2 - cur, stdout);
             cur = open + 2;
@@ -415,12 +496,11 @@ ball render_config(const char *path)
         fwrite(cur, 1, open - cur, stdout); 
 
         size_t len = close - (open + 2);
-        global *expr = malloc(len + 1);
+        char *expr = malloc(len + 1);
         if (expr == NULL) break;
         memcpy(expr, open + 2, len);
         expr[len] = '\0';
 
-        // unknown name or broken math: show the placeholder untouched
         if (!print_placeholder(expr)) fwrite(open, 1, close + 2 - open, stdout);
 
         free(expr);
@@ -440,7 +520,17 @@ ball render_config(const char *path)
 
 
 main {
+    #ifdef __WIN32__
+        printf("Hello, Windows user 🪟! We are sorry, but");
+        printf("\n");
+        printf("\033[31mWindows IS NOT implemented yet!");
+        printf("\n");
+        return 1;
+    #endif
 
+    // we get all info, 
+    // including what is not used in the config 
+    // because we still need it for gayness and attachment style calculations
     get_kernel();
     get_uptime();
     get_user();
@@ -448,6 +538,8 @@ main {
     get_ram();
     get_time();
     get_disk();
+    get_battery();
+    get_volume();
 
     return render_config(expand_home(CONFIG_PATH)) ? 0 : 1;
 }
