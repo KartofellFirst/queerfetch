@@ -56,6 +56,9 @@ your custom config must be available at `~/.config/queerfetch/config.queer` <br>
 | `ATTACHMENT_SECURITY` | attachment security, 0 to 100 |
 | `LICENSE` | `Top` or `Bottom` |
 | `BOTTOM_LICENSE_POINTS` | license points, 0 to 100 |
+| `VOLUME` | your speakers volume, 0 to 100 |
+| `BATTERY_STATUS` | charging / discharging |
+| `BATTERY_PERCENTAGE` | 0% to 100% |
 
 to use them, in your config wrap variable name in `%{}%`
 
